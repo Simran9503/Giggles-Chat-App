@@ -1,19 +1,32 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Firebase from "./config/Firebase3"
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Home from "./pages/Home";
+import { AuthContext } from "./context/AuthContext";
 import './style.scss'
+import { useContext } from "react";
+
 
 function App() {
   
-
+const {currentUser} =useContext(AuthContext);
+// console.log(currentUser);
+const ProtectedRoute = ({children})=>{
+  if(!currentUser){
+    return <Navigate to ='/login'/>
+  }
+  return children
+}
   return (
     <Router>
       <Routes>
-    <Route path='/' element={<Signup/>}/>
-    <Route path='/login' element={<Login/>}/>
-    <Route path='/home' element={<Home/>}/>
+        <Route path='/'>
+        <Route path='signup' element={<Signup/>}/>
+    <Route path='login' element={<Login/>}/>
+    <Route index   element={<ProtectedRoute><Home/></ProtectedRoute>}/>
+        </Route>
+
       </Routes>
     </Router>
 

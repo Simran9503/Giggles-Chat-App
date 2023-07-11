@@ -1,164 +1,85 @@
 import { Box, TextField, Typography, Stack, Button } from "@mui/material";
-import { Link } from "react-router-dom";
-import gallary from '../images/gallery.webp'
+import { Link, useNavigate } from "react-router-dom";
+import gallary from "../images/gallery.webp";
+import { useState } from "react";
+import { doc, setDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth, storage, db } from "../config/Firebase3";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 const Signup = () => {
+  const [err, setErr] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    setLoading(true);
+
+    e.preventDefault();
+    const displayName = e.target[0].value;
+    const email = e.target[1].value;
+    const password = e.target[2].value;
+    const file = e.target[3].files[0];
+    try {
+      const res = await createUserWithEmailAndPassword(auth, email, password);
+      const date = new Date().getTime();
+      const storageRef = ref(storage, `${displayName + date}`);
+
+      await uploadBytesResumable(storageRef, file).then(() => {
+        getDownloadURL(storageRef).then(async (downloadURL) => {
+          try {
+            //Update profile
+            await updateProfile(res.user, {
+              displayName,
+              photoURL: downloadURL,
+            });
+            //create user on firestore
+            await setDoc(doc(db, "users", res.user.uid), {
+              uid: res.user.uid,
+              displayName,
+              email,
+              photoURL: downloadURL,
+            });
+
+            //create empty user chats on firestore
+            await setDoc(doc(db, "userChats", res.user.uid), {});
+            navigate("/");
+          } catch (err) {
+            console.log(err);
+            setErr(true);
+            setLoading(false);
+          }
+        });
+      });
+    } catch (err) {
+      setErr(true);
+      setLoading(false);
+    }
+  };
+
   return (
-    <Box
-      justifyContent="center"
-      alignItems="center"
-      display="flex"
-      sx={{
-        backgroundColor: "#d199d4",
-        height: "100vh",
-        width: "100vw",
-      }}
-    >
-      <Box
-        justifyContent="center"
-        display="flex"
-        sx={{
-          backgroundColor: "#fcf9fc",
-          height: "450px",
-          borderRadius: "30px",
-          width: {
-            xs: "70vw",
-            sm: "60vw",
-            md: "50vw",
-            lg: "40vw",
-          },
-          ":hover": {
-            transform: "scale(1.1)",
-          },
-        }}
-      >
-        <Stack direction="column" alignItems="center">
-          <Typography
-            fontWeight="200px"
-            fontFamily="cursive"
-            fontSize="30px"
-            color="#7e0099"
-            sx={{
-                mt:'10px',
-                mb:'10px'
-            }}
-          >
-            Giggles
-          </Typography>
-          <Typography
-            fontWeight="100px"
-            fontFamily="cursive"
-            fontSize="20px"
-            color="#7e0099"
-          >
-            Register
-          </Typography>
-          <TextField type="text"
-            label="Display Name"
-            size="small"
-            InputProps={{
-              height: "30px",
-              width: "35vw",
-            }}
-            inputProps={{
-              style: {
-                height: "90%", // Ensure the input takes up the full height
-
-                fontSize: "15px", // Adjust font size as needed,
-                color: "#7e0099",
-              },
-            }}
-            sx={{
-              mt: "50px",
-              //height: "20px",
-              width: "35vw",
-              border: "none",
-              borderBottom: "#7e0099",
-           
-            }}
-          />
-          <TextField type="email"
-            label="Email"
-            size="small"
-            InputProps={{
-              height: "30px",
-              width: "35vw",
-            }}
-            inputProps={{
-              style: {
-                height: "90%", // Ensure the input takes up the full height
-
-                fontSize: "15px", // Adjust font size as needed,
-                color: "#7e0099",
-              },
-            }}
-            sx={{
-              mt: "20px",
-              //height: "20px",
-              width: "35vw",
-              border: "none",
-              borderBottom: "#7e0099",
-           
-            }}
-          />
-          <TextField type="password"
-            label="Password"
-            size="small"
-            InputProps={{
-              height: "30px",
-              width: "35vw",
-            }}
-            inputProps={{
-              style: {
-                height: "90%", // Ensure the input takes up the full height
-
-                fontSize: "15px", // Adjust font size as needed,
-                color: "#7e0099",
-              },
-            }}
-            sx={{
-              mt: "20px",
-              //height: "20px",
-              width: "35vw",
-              border: "none",
-              borderBottom: "#7e0099",
-           
-            }}
-          />
-          <input type="file" id='file' style={{
-            marginTop:'20px',
-            display:'none'
-          }}/>
-          <label htmlFor="file" style={{
-            marginTop:'20px',
-            display:'flex',
-            alignItems:'center',
-            gap:'10px',
-            color:'#7e0099',
-            cursor:'pointer'
-          }}>
-<img src={gallary} alt='gallary' style={{
-    height:'30px',
-    width:'30px'
-}}/> 
-<span>Add an avatar</span>
-
+    <div className="formContainer">
+    <div className="formWrapper">
+      <span className="logo">Giggles</span>
+      <span className="title">Register</span>
+          <form onSubmit={handleSubmit}>
+          <input required type="text" placeholder="display name" />
+          <input required type="email" placeholder="email" />
+          <input required type="password" placeholder="password" />
+          <input required style={{ display: "none" }} type="file" id="file" />
+          <label htmlFor="file">
+            <img src={gallary} alt="" />
+            <span>Add an avatar</span>
           </label>
-
-          <Button variant="outlined" sx={{
-           backgroundColor: '#7e0099',
-           color:'white',
-           ":hover":{
-            backgroundColor:'#2dbd34'
-           },
-           mt:'20px',
-           width:'35vw'
-          }}>Signup</Button>
-          <p>Already a user?  <Link to='/login'>Login</Link></p>
-
-          
-        </Stack>
-      </Box>
-    </Box>
-  )
-}
-export default Signup
+          <button disabled={loading}>Sign up</button>
+          {loading && "Uploading and compressing the image please wait..."}
+          {err && <span>Something went wrong</span>}
+        </form>
+        <p>
+          You do have an account? <Link to="/login">Login</Link>
+        </p>
+      </div>
+    </div>
+  );
+};
+export default Signup;
