@@ -12,7 +12,7 @@ import { getFirestore } from "firebase/firestore";
 //   measurementId: "G-X23RS6K909"
 // };
 const firebaseConfig = {
-  apiKey: "AIzaSyAWbWPELeuwptthHHmXD_L1QmUbPRGPhVs",
+  apiKey:  "AIzaSyAWbWPELeuwptthHHmXD_L1QmUbPRGPhVs",
   authDomain: "giggles-5afdc.firebaseapp.com",
   projectId: "giggles-5afdc",
   storageBucket: "giggles-5afdc.appspot.com",
